@@ -14,6 +14,14 @@ const Home = () => {
             Enter at least three characters in the search box to find news
             articles related to your query.
           </li>
+          <li className="mb-2">
+            Use words like <strong>google</strong>,<strong>samsung</strong>,
+            <strong>iphone</strong> etc.
+          </li>
+          <li>
+            You can refresh the IndexedDB in storage of browser to see the
+            stored data as well as console to see where eaxctly data is coming from.
+          </li>
         </ul>
       </section>
 
