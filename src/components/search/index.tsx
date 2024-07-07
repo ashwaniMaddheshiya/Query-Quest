@@ -4,16 +4,19 @@ import debounce from "lodash.debounce";
 import { openDb, storeDataWithExpiry } from "../../utils/cacheStore/IndexedDB";
 import Loading from "../UI/Loading";
 
-interface ResponseItem {
+interface Article {
   title: string;
-  body: string;
-  id: number;
-  userId: number;
+  description: string;
+  url: string;
+}
+
+interface ApiResponse {
+  articles: Article[];
 }
 
 const SearchComponent: React.FC = () => {
   const [query, setQuery] = useState<string>("");
-  const [results, setResults] = useState<ResponseItem[]>([]);
+  const [results, setResults] = useState<Article[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [page, setPage] = useState<number>(1);
   const latestQueryRef = useRef<string>("");
@@ -34,20 +37,20 @@ const SearchComponent: React.FC = () => {
           return;
         }
 
-        const response = await axios.get<ResponseItem[]>(
-          `https://jsonplaceholder.typicode.com/posts`,
+        const response = await axios.get<ApiResponse>(
+          `https://gnews.io/api/v4/search`,
           {
             params: {
-              q: query,
-              _limit: 5,
-              _page: pageNum,
+              q: searchQuery,
+              page: pageNum,
+              max: 5,
+              apikey: process.env.REACT_APP_GNEWS_API_KEY,
             },
           }
         );
-        const newResults = response.data;
-        console.log(response);
+        const newResults = response.data.articles;
         if (newResults) {
-          console.log("Data fetched from API");
+          console.log("Data fetched from api");
         }
 
         await storeDataWithExpiry(`${searchQuery}-${pageNum}`, newResults);
@@ -82,7 +85,7 @@ const SearchComponent: React.FC = () => {
   const getCachedResults = async (
     searchQuery: string,
     pageNum: number
-  ): Promise<ResponseItem[] | undefined> => {
+  ): Promise<Article[] | undefined> => {
     try {
       const db = await openDb();
       const transaction = db.transaction(["cacheStore"], "readonly");
@@ -134,16 +137,16 @@ const SearchComponent: React.FC = () => {
         />
       </div>
       <div className="mt-3">
-        {results.map((result) => (
+        {results.map((result, index) => (
           <div
             className="p-2"
             style={{ boxShadow: "rgba(17, 17, 26, 0.1) 0px 1px 0px" }}
-            key={result.id}
+            key={index}
           >
             <div className="font-medium text-xl text-gray-700 ">
               {result.title}
             </div>
-            <div className="text-sm text-gray-500">{result.body}</div>
+            <div className="text-sm text-gray-500">{result.description}</div>
           </div>
         ))}
       </div>
