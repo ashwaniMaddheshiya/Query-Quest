@@ -4,19 +4,16 @@ import debounce from "lodash.debounce";
 import { openDb, storeDataWithExpiry } from "../../utils/cacheStore/IndexedDB";
 import Loading from "../UI/Loading";
 
-interface Article {
+interface ResponseItem {
   title: string;
-  description: string;
-  url: string;
-}
-
-interface ApiResponse {
-  articles: Article[];
+  body: string;
+  id: number;
+  userId: number;
 }
 
 const SearchComponent: React.FC = () => {
   const [query, setQuery] = useState<string>("");
-  const [results, setResults] = useState<Article[]>([]);
+  const [results, setResults] = useState<ResponseItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [page, setPage] = useState<number>(1);
   const latestQueryRef = useRef<string>("");
@@ -37,20 +34,20 @@ const SearchComponent: React.FC = () => {
           return;
         }
 
-        const response = await axios.get<ApiResponse>(
-          `https://newsapi.org/v2/everything`,
+        const response = await axios.get<ResponseItem[]>(
+          `https://jsonplaceholder.typicode.com/posts`,
           {
             params: {
-              q: searchQuery,
-              page: pageNum,
-              pageSize: 5,
-              apiKey: process.env.REACT_APP_NEWS_API_KEY,
+              q: query,
+              _limit: 5,
+              _page: pageNum,
             },
           }
         );
-        const newResults = response.data.articles;
+        const newResults = response.data;
+        console.log(response);
         if (newResults) {
-          console.log("Data fetched from api");
+          console.log("Data fetched from API");
         }
 
         await storeDataWithExpiry(`${searchQuery}-${pageNum}`, newResults);
@@ -85,7 +82,7 @@ const SearchComponent: React.FC = () => {
   const getCachedResults = async (
     searchQuery: string,
     pageNum: number
-  ): Promise<Article[] | undefined> => {
+  ): Promise<ResponseItem[] | undefined> => {
     try {
       const db = await openDb();
       const transaction = db.transaction(["cacheStore"], "readonly");
@@ -137,16 +134,16 @@ const SearchComponent: React.FC = () => {
         />
       </div>
       <div className="mt-3">
-        {results.map((result, index) => (
+        {results.map((result) => (
           <div
             className="p-2"
             style={{ boxShadow: "rgba(17, 17, 26, 0.1) 0px 1px 0px" }}
-            key={index}
+            key={result.id}
           >
             <div className="font-medium text-xl text-gray-700 ">
               {result.title}
             </div>
-            <div className="text-sm text-gray-500">{result.description}</div>
+            <div className="text-sm text-gray-500">{result.body}</div>
           </div>
         ))}
       </div>
